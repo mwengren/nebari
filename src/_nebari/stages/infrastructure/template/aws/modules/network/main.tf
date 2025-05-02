@@ -1,4 +1,13 @@
+locals {
+  vpc = var.vpc_id == null ? one(aws_vpc.main[*]) : one(data.aws_vpc.main[*]) 
+  public_subnets = var.public_subnet_ids == null ? aws_subnet.public[*] : data.aws_subnet.public[*] 
+  private_subnets = var.private_subnet_ids == null ? aws_subnet.private[*] : data.aws_subnet.private[*] 
+  aws_security_group = var.existing_security_group_id == null ? aws_security_group.main : var.existing_security_group_id
+}
+
+
 resource "aws_vpc" "main" {
+  count = var.vpc_id == null ? 1 : 0
   cidr_block = var.vpc_cidr_block
 
   enable_dns_support   = true
@@ -7,8 +16,15 @@ resource "aws_vpc" "main" {
   tags = merge({ Name = var.name }, var.tags, var.vpc_tags)
 }
 
+data "aws_vpc" "main" {
+  count = var.vpc_id == null ? 0 : 1
+  id = var.vpc_id
+}
+
 resource "aws_subnet" "public" {
-  count = length(var.aws_availability_zones)
+  #count = length(var.aws_availability_zones)
+  #count = var.public_subnet_ids != null ? length(var.public_subnet_ids) : length(var.aws_availability_zones)
+  count = var.public_subnet_ids == null ? length(var.aws_availability_zones) : 0
 
   availability_zone = var.aws_availability_zones[count.index]
   cidr_block        = cidrsubnet(var.vpc_cidr_block, var.vpc_cidr_newbits, count.index)
@@ -28,9 +44,15 @@ moved {
   to   = aws_subnet.public
 }
 
+data "aws_subnet" "public" {
+  #count = var.subnet_id != null ? 1 : 0
+  count = length(var.public_subnet_ids)
+  id = var.public_subnet_ids[count.index]
+}
 
 resource "aws_subnet" "private" {
-  count = length(var.aws_availability_zones)
+  #count = length(var.aws_availability_zones)
+  count = var.private_subnet_ids == null ? length(var.aws_availability_zones) : 0
 
   availability_zone = var.aws_availability_zones[count.index]
   cidr_block        = cidrsubnet(var.vpc_cidr_block, var.vpc_cidr_newbits, count.index + length(var.aws_availability_zones))
@@ -45,14 +67,22 @@ resource "aws_subnet" "private" {
   }
 }
 
+data "aws_subnet" "private" {
+  #count = var.subnet_id != null ? 1 : 0
+  count = length(var.private_subnet_ids)
+  id = var.private_subnet_ids[count.index]
+}
+
 resource "aws_internet_gateway" "main" {
-  vpc_id = aws_vpc.main.id
+  count = var.vpc_id == null ? 1 : 0
+  vpc_id = local.vpc.id
 
   tags = merge({ Name = var.name }, var.tags)
 }
 
 resource "aws_eip" "nat-gateway-eip" {
-  count = length(var.aws_availability_zones)
+  #count = length(var.aws_availability_zones)
+  count = var.public_subnet_ids == null ? length(var.aws_availability_zones) : 0
 
   domain = "vpc"
 
@@ -60,7 +90,8 @@ resource "aws_eip" "nat-gateway-eip" {
 }
 
 resource "aws_nat_gateway" "main" {
-  count = length(var.aws_availability_zones)
+  #count = length(var.aws_availability_zones)
+  count = var.public_subnet_ids == null ? length(var.aws_availability_zones) : 0
 
   allocation_id = aws_eip.nat-gateway-eip[count.index].id
   subnet_id     = aws_subnet.public[count.index].id
@@ -70,7 +101,8 @@ resource "aws_nat_gateway" "main" {
 }
 
 resource "aws_route_table" "public" {
-  vpc_id = aws_vpc.main.id
+  count = var.vpc_id == null ? 1 : 0
+  vpc_id = local.vpc.id
 
   route {
     cidr_block = "0.0.0.0/0"
@@ -86,9 +118,10 @@ moved {
 }
 
 resource "aws_route_table" "private" {
-  count = length(var.aws_availability_zones)
+  #count = length(var.aws_availability_zones)
+  count = var.private_subnet_ids == null ? length(var.aws_availability_zones) : 0
 
-  vpc_id = aws_vpc.main.id
+  vpc_id = local.vpc.id
 
   route {
     cidr_block = "0.0.0.0/0"
@@ -99,24 +132,27 @@ resource "aws_route_table" "private" {
 }
 
 resource "aws_route_table_association" "public" {
-  count = length(var.aws_availability_zones)
+  #count = length(var.aws_availability_zones)
+  count = var.vpc_id == null ? length(var.aws_availability_zones) : 0
 
   subnet_id      = aws_subnet.public[count.index].id
   route_table_id = aws_route_table.public.id
 }
 
 resource "aws_route_table_association" "private" {
-  count = length(var.aws_availability_zones)
+  #count = length(var.aws_availability_zones)
+  count = var.private_subnet_ids == null ? length(var.aws_availability_zones) : 0
 
   subnet_id      = aws_subnet.private[count.index].id
   route_table_id = aws_route_table.private[count.index].id
 }
 
 resource "aws_security_group" "main" {
+  count = var.existing_security_group_id == null ? 1 : 0
   name        = var.name
   description = "Main security group for infrastructure deployment"
 
-  vpc_id = aws_vpc.main.id
+  vpc_id = local.vpc.id
 
   ingress {
     description = "Allow all ports and protocols to enter the security group"
@@ -138,7 +174,7 @@ resource "aws_security_group" "main" {
 }
 
 resource "aws_vpc_endpoint" "s3" {
-  vpc_id            = aws_vpc.main.id
+  vpc_id            = local.vpc.id
   service_name      = "com.amazonaws.${var.region}.s3"
   vpc_endpoint_type = "Gateway"
   route_table_ids   = aws_route_table.private[*].id
@@ -146,7 +182,7 @@ resource "aws_vpc_endpoint" "s3" {
 }
 
 resource "aws_vpc_endpoint" "ecr_api" {
-  vpc_id              = aws_vpc.main.id
+  vpc_id              = local.vpc.id
   service_name        = "com.amazonaws.${var.region}.ecr.api"
   vpc_endpoint_type   = "Interface"
   private_dns_enabled = true
@@ -156,7 +192,7 @@ resource "aws_vpc_endpoint" "ecr_api" {
 }
 
 resource "aws_vpc_endpoint" "ecr_dkr" {
-  vpc_id              = aws_vpc.main.id
+  vpc_id              = local.vpc.id
   service_name        = "com.amazonaws.${var.region}.ecr.dkr"
   vpc_endpoint_type   = "Interface"
   private_dns_enabled = true
@@ -166,7 +202,7 @@ resource "aws_vpc_endpoint" "ecr_dkr" {
 }
 
 resource "aws_vpc_endpoint" "elasticloadbalancing" {
-  vpc_id              = aws_vpc.main.id
+  vpc_id              = local.vpc.id
   service_name        = "com.amazonaws.${var.region}.elasticloadbalancing"
   vpc_endpoint_type   = "Interface"
   private_dns_enabled = true
@@ -176,7 +212,7 @@ resource "aws_vpc_endpoint" "elasticloadbalancing" {
 }
 
 resource "aws_vpc_endpoint" "sts" {
-  vpc_id              = aws_vpc.main.id
+  vpc_id              = local.vpc.id
   service_name        = "com.amazonaws.${var.region}.sts"
   vpc_endpoint_type   = "Interface"
   private_dns_enabled = true
@@ -186,7 +222,7 @@ resource "aws_vpc_endpoint" "sts" {
 }
 
 resource "aws_vpc_endpoint" "eks" {
-  vpc_id              = aws_vpc.main.id
+  vpc_id              = local.vpc.id
   service_name        = "com.amazonaws.${var.region}.eks"
   vpc_endpoint_type   = "Interface"
   private_dns_enabled = true

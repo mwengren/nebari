@@ -48,3 +48,48 @@ variable "region" {
   type        = string
 
 }
+
+variable "existing_security_group_id" {
+  description = "Existing security group ID to use for Kubernetes resources"
+  type        = string
+}
+
+variable "vpc_id" {
+  description = "Existing VPC ID to use"
+  type = string
+
+  default = null
+
+  validation {
+    condition     = var.vpc_id == null ? true : ( length(var.vpc_id) > 4 && substr(var.vpc_id, 0, 4) == "vpc-" )
+    error_message = "The vpc_id value must start with \"vpc-\"."
+  }
+}
+
+variable "public_subnet_ids" {
+  description = "The IDs of existing public subnet(s) within the target VPC to use, if any (optional)."
+  type = list(string)
+  default = null
+
+  #todo: the validation should check each subnet in the list, not just the first one [0]
+  validation {
+    condition     = var.public_subnet_ids == null ? true : ( length(var.public_subnet_ids[0]) > 7 && substr(var.public_subnet_ids[0], 0, 7) == "subnet-" )
+    error_message = "The subnet_id value must start with \"subnet-\"."
+  }
+
+}
+
+variable "private_subnet_ids" {
+  description = "The IDs of existing private subnet(s) within the target VPC to use, if any (optional)."
+  type = list(string)
+  default = null
+
+  #todo: the validation should check each subnet in the list, not just the first one [0]
+  validation {
+    condition     = var.private_subnet_ids == null ? true : ( length(var.private_subnet_ids[0]) > 7 && substr(var.private_subnet_ids[0], 0, 7) == "subnet-" )
+    error_message = "The subnet_id value must start with \"subnet-\"."
+  }
+
+}
+
+
