@@ -9,9 +9,11 @@ data "aws_partition" "current" {}
 
 locals {
   # Only override_network if both existing_subnet_ids and existing_security_group_id are not null.
-  override_network   = (var.existing_subnet_ids != null) && (var.existing_security_group_id != null)
-  private_subnet_ids = local.override_network ? var.existing_subnet_ids : module.network[0].private_subnet_ids
-  security_group_id  = local.override_network ? var.existing_security_group_id : module.network[0].security_group_id
+  #override_network   = (var.existing_subnet_ids != null) && (var.existing_security_group_id != null)
+  #private_subnet_ids = local.override_network ? var.existing_subnet_ids : module.network[0].private_subnet_ids
+  private_subnet_ids = module.network[0].private_subnet_ids
+  #security_group_id  = local.override_network ? var.existing_security_group_id : module.network[0].security_group_id
+  security_group_id  = module.network[0].local.security_group_id
   partition          = data.aws_partition.current.partition
 }
 
@@ -28,7 +30,7 @@ module "accounting" {
 
 # ======================= NETWORK ======================
 module "network" {
-  count = local.override_network ? 0 : 1
+  #count = local.override_network ? 0 : 1
 
   source = "./modules/network"
 
@@ -48,6 +50,10 @@ module "network" {
     "kubernetes.io/cluster/${local.cluster_name}" = "owned"
   }
 
+  vpc_id                 = var.vpc_id
+  public_subnet_ids      = var.public_subnet_ids
+  private_subnet_ids     = var.private_subnet_ids
+  existing_security_group_id  = var.existing_security_group_id
   vpc_cidr_block         = var.vpc_cidr_block
   aws_availability_zones = length(var.availability_zones) >= 2 ? var.availability_zones : slice(sort(data.aws_availability_zones.awszones.names), 0, 2)
   region                 = var.region
