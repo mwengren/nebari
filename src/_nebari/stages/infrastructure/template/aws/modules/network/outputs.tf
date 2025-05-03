@@ -1,19 +1,19 @@
 output "security_group_id" {
   description = "AWS security group id"
-  value       = aws_security_group.main.id
+  value       = local.aws_security_group.id
 }
 
 output "public_subnet_ids" {
   description = "AWS VPC public subnet ids"
-  value       = aws_subnet.public[*].id
+  value       = local.public_subnets[*].id
 }
 
 output "private_subnet_ids" {
   description = "AWS VPC private subnet ids"
-  value       = aws_subnet.private[*].id
+  value       = local.private_subnets[*].id
 }
 
 output "vpc_id" {
   description = "AWS VPC id"
-  value       = aws_vpc.main.id
+  value       = local.vpc.id
 }
