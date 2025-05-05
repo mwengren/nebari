@@ -253,7 +253,9 @@ class AWSInputVars(schema.Base):
     kubeconfig_filename: str = get_kubeconfig_filename()
     tags: Dict[str, str] = {}
     efs_enabled: bool
-
+    vpc_id: Optional[str] = None
+    public_subnet_ids: Optional[List[str]] = None
+    private_subnet_ids: Optional[List[str]] = None
 
 def _calculate_asg_node_group_map(config: schema.Main):
     if config.provider == schema.ProviderEnum.aws:
@@ -573,6 +575,9 @@ class AmazonWebServicesProvider(schema.Base):
     vpc_cidr_block: str = "10.10.0.0/16"
     permissions_boundary: Optional[str] = None
     tags: Optional[Dict[str, str]] = {}
+    vpc_id: Optional[str] = None
+    public_subnet_ids: Optional[List[str]] = None
+    private_subnet_ids: Optional[List[str]] = None
 
     @model_validator(mode="before")
     @classmethod
@@ -970,6 +975,9 @@ class KubernetesInfrastructureStage(NebariTerraformStage):
                 permissions_boundary=self.config.amazon_web_services.permissions_boundary,
                 tags=self.config.amazon_web_services.tags,
                 efs_enabled=self.config.storage.type == SharedFsEnum.efs,
+                vpc_id=self.config.amazon_web_services.vpc_id,
+                public_subnet_ids=self.config.amazon_web_services.public_subnet_ids,
+                private_subnet_ids=self.config.amazon_web_services.private_subnet_ids
             ).model_dump()
         else:
             raise ValueError(f"Unknown provider: {self.config.provider}")
