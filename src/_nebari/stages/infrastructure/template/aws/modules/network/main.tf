@@ -22,13 +22,11 @@ data "aws_vpc" "main" {
 }
 
 resource "aws_subnet" "public" {
-  #count = length(var.aws_availability_zones)
-  #count = var.public_subnet_ids != null ? length(var.public_subnet_ids) : length(var.aws_availability_zones)
   count = var.public_subnet_ids == null ? length(var.aws_availability_zones) : 0
 
   availability_zone = var.aws_availability_zones[count.index]
   cidr_block        = cidrsubnet(var.vpc_cidr_block, var.vpc_cidr_newbits, count.index)
-  vpc_id            = aws_vpc.main.id
+  vpc_id            = aws_vpc.main[count.index].id
 
   tags = merge({ Name = "${var.name}-pulbic-subnet-${count.index}", "kubernetes.io/role/elb" = 1 }, var.tags, var.subnet_tags)
 
@@ -45,18 +43,16 @@ moved {
 }
 
 data "aws_subnet" "public" {
-  #count = var.subnet_id != null ? 1 : 0
   count = length(var.public_subnet_ids)
   id = var.public_subnet_ids[count.index]
 }
 
 resource "aws_subnet" "private" {
-  #count = length(var.aws_availability_zones)
   count = var.private_subnet_ids == null ? length(var.aws_availability_zones) : 0
 
   availability_zone = var.aws_availability_zones[count.index]
   cidr_block        = cidrsubnet(var.vpc_cidr_block, var.vpc_cidr_newbits, count.index + length(var.aws_availability_zones))
-  vpc_id            = aws_vpc.main.id
+  vpc_id            = aws_vpc.main[count.index].id
 
   tags = merge({ Name = "${var.name}-private-subnet-${count.index}" }, var.tags, var.subnet_tags)
 
@@ -68,7 +64,6 @@ resource "aws_subnet" "private" {
 }
 
 data "aws_subnet" "private" {
-  #count = var.subnet_id != null ? 1 : 0
   count = length(var.private_subnet_ids)
   id = var.private_subnet_ids[count.index]
 }
@@ -81,7 +76,6 @@ resource "aws_internet_gateway" "main" {
 }
 
 resource "aws_eip" "nat-gateway-eip" {
-  #count = length(var.aws_availability_zones)
   count = var.public_subnet_ids == null ? length(var.aws_availability_zones) : 0
 
   domain = "vpc"
@@ -90,7 +84,6 @@ resource "aws_eip" "nat-gateway-eip" {
 }
 
 resource "aws_nat_gateway" "main" {
-  #count = length(var.aws_availability_zones)
   count = var.public_subnet_ids == null ? length(var.aws_availability_zones) : 0
 
   allocation_id = aws_eip.nat-gateway-eip[count.index].id
@@ -106,7 +99,7 @@ resource "aws_route_table" "public" {
 
   route {
     cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.main.id
+    gateway_id = aws_internet_gateway.main[count.index].id
   }
 
   tags = merge({ Name = var.name }, var.tags)
@@ -118,7 +111,6 @@ moved {
 }
 
 resource "aws_route_table" "private" {
-  #count = length(var.aws_availability_zones)
   count = var.private_subnet_ids == null ? length(var.aws_availability_zones) : 0
 
   vpc_id = local.vpc.id
@@ -137,15 +129,13 @@ data "aws_route_table" "private" {
 }
 
 resource "aws_route_table_association" "public" {
-  #count = length(var.aws_availability_zones)
   count = var.vpc_id == null ? length(var.aws_availability_zones) : 0
 
   subnet_id      = aws_subnet.public[count.index].id
-  route_table_id = aws_route_table.public.id
+  route_table_id = aws_route_table.public[count.index].id
 }
 
 resource "aws_route_table_association" "private" {
-  #count = length(var.aws_availability_zones)
   count = var.private_subnet_ids == null ? length(var.aws_availability_zones) : 0
 
   subnet_id      = aws_subnet.private[count.index].id
@@ -187,7 +177,6 @@ resource "aws_vpc_endpoint" "s3" {
   vpc_id            = local.vpc.id
   service_name      = "com.amazonaws.${var.region}.s3"
   vpc_endpoint_type = "Gateway"
-  # need to obtain private route tables in a local variable list and use here:
   route_table_ids   = local.private_route_tables[*].id
   tags              = merge({ Name = "${var.name}-s3-endpoint" }, var.tags)
 }
