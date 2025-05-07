@@ -3,7 +3,8 @@ locals {
   public_subnets = var.public_subnet_ids == null ? aws_subnet.public[*] : data.aws_subnet.public[*] 
   private_subnets = var.private_subnet_ids == null ? aws_subnet.private[*] : data.aws_subnet.private[*] 
   private_route_tables = var.private_subnet_ids == null ? aws_route_table.private[*] : data.aws_route_table.private[*]
-  aws_security_group = var.existing_security_group_id == null ? aws_security_group.main : data.aws_security_group.main
+  #aws_security_groups = var.existing_security_group_id == null ? aws_security_group.main : data.aws_security_group.main
+  aws_security_group = var.existing_security_group_id == null ? one(aws_security_group.main[*]) : one(data.aws_security_group.main[*])
 }
 
 resource "aws_vpc" "main" {
@@ -187,6 +188,7 @@ resource "aws_vpc_endpoint" "ecr_api" {
   vpc_endpoint_type   = "Interface"
   private_dns_enabled = true
   security_group_ids  = [local.aws_security_group.id]
+  #security_group_ids  = local.aws_security_groups[*].id
   subnet_ids          = local.private_subnets[*].id
   tags                = merge({ Name = "${var.name}-ecr-api-endpoint" }, var.tags)
 }
@@ -197,6 +199,7 @@ resource "aws_vpc_endpoint" "ecr_dkr" {
   vpc_endpoint_type   = "Interface"
   private_dns_enabled = true
   security_group_ids  = [local.aws_security_group.id]
+  #security_group_ids  = local.aws_security_groups[*].id
   subnet_ids          = local.private_subnets[*].id
   tags                = merge({ Name = "${var.name}-ecr-dkr-endpoint" }, var.tags)
 }
@@ -207,6 +210,7 @@ resource "aws_vpc_endpoint" "elasticloadbalancing" {
   vpc_endpoint_type   = "Interface"
   private_dns_enabled = true
   security_group_ids  = [local.aws_security_group.id]
+  #security_group_ids  = local.aws_security_groups[*].id
   subnet_ids          = local.private_subnets[*].id
   tags                = merge({ Name = "${var.name}-elb-endpoint" }, var.tags)
 }
@@ -217,6 +221,7 @@ resource "aws_vpc_endpoint" "sts" {
   vpc_endpoint_type   = "Interface"
   private_dns_enabled = true
   security_group_ids  = [local.aws_security_group.id]
+  #security_group_ids  = local.aws_security_groups[*].id
   subnet_ids          = local.private_subnets[*].id
   tags                = merge({ Name = "${var.name}-sts-endpoint" }, var.tags)
 }
@@ -227,6 +232,7 @@ resource "aws_vpc_endpoint" "eks" {
   vpc_endpoint_type   = "Interface"
   private_dns_enabled = true
   security_group_ids  = [local.aws_security_group.id]
+  #security_group_ids  = local.aws_security_groups[*].id
   subnet_ids          = local.private_subnets[*].id
   tags                = merge({ Name = "${var.name}-eks-endpoint" }, var.tags)
 }
