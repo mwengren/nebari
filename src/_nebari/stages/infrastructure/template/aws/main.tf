@@ -11,9 +11,11 @@ locals {
   # Only override_network if both existing_subnet_ids and existing_security_group_id are not null.
   #override_network   = (var.existing_subnet_ids != null) && (var.existing_security_group_id != null)
   #private_subnet_ids = local.override_network ? var.existing_subnet_ids : module.network[0].private_subnet_ids
-  private_subnet_ids = module.network[0].private_subnet_ids
+  #private_subnet_ids = module.network[0].private_subnet_ids
+  private_subnet_ids = module.network.private_subnet_ids
   #security_group_id  = local.override_network ? var.existing_security_group_id : module.network[0].security_group_id
-  security_group_id  = module.network[0].security_group_id
+  #security_group_id  = module.network[0].security_group_id
+  security_group_id  = module.network.security_group_id
   partition          = data.aws_partition.current.partition
 }
 
