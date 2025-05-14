@@ -8,9 +8,6 @@ data "aws_availability_zones" "awszones" {
 data "aws_partition" "current" {}
 
 locals {
-  # Only override_network if both existing_subnet_ids and existing_security_group_id are not null.
-  #override_network   = (var.existing_subnet_ids != null) && (var.existing_security_group_id != null)
-  #private_subnet_ids = local.override_network ? var.existing_subnet_ids : module.network[0].private_subnet_ids
   #private_subnet_ids = module.network[0].private_subnet_ids
   private_subnet_ids = module.network.private_subnet_ids
   #security_group_id  = local.override_network ? var.existing_security_group_id : module.network[0].security_group_id
@@ -52,7 +49,6 @@ module "network" {
     "kubernetes.io/cluster/${local.cluster_name}" = "owned"
   }
 
-  vpc_id                 = var.vpc_id
   public_subnet_ids      = var.public_subnet_ids
   private_subnet_ids     = var.private_subnet_ids
   existing_security_group_id  = var.existing_security_group_id
