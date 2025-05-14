@@ -8,18 +8,6 @@ variable "environment" {
   type        = string
 }
 
-variable "vpc_id" {
-  description = "Existing VPC ID to use"
-  type = string
-
-  default = null
-
-  validation {
-    condition     = var.vpc_id == null ? true : ( length(var.vpc_id) > 4 && substr(var.vpc_id, 0, 4) == "vpc-" )
-    error_message = "The vpc_id value must start with \"vpc-\"."
-  }
-}
-
 variable "public_subnet_ids" {
   description = "The IDs of existing public subnet(s) within the target VPC to use, if any (optional)."
   type = list(string)
@@ -44,12 +32,6 @@ variable "private_subnet_ids" {
     error_message = "The subnet_id value must start with \"subnet-\"."
   }
 
-}
-
-
-variable "existing_subnet_ids" {
-  description = "Existing VPC ID to use for Kubernetes resources"
-  type        = list(string)
 }
 
 variable "existing_security_group_id" {

@@ -1,5 +1,6 @@
 locals {
-  vpc = var.vpc_id == null ? one(aws_vpc.main[*]) : one(data.aws_vpc.main[*]) 
+  # both public_subnet_ids and private_subnet_ids should be null to create a new VPC, otherwise, use existing
+  vpc = length(var.public_subnet_ids) + length(var.private_subnet_ids) == 0 ? one(aws_vpc.main[*]) : one(data.aws_vpc.main[*]) 
   public_subnets = var.public_subnet_ids == null ? aws_subnet.public[*] : data.aws_subnet.public[*] 
   private_subnets = var.private_subnet_ids == null ? aws_subnet.private[*] : data.aws_subnet.private[*] 
   private_route_tables = var.private_subnet_ids == null ? aws_route_table.private[*] : data.aws_route_table.private[*]
@@ -8,7 +9,7 @@ locals {
 }
 
 resource "aws_vpc" "main" {
-  count = var.vpc_id == null ? 1 : 0
+  count = length(var.public_subnet_ids) + length(var.private_subnet_ids) == 0 ? 1 : 0
   cidr_block = var.vpc_cidr_block
 
   enable_dns_support   = true
@@ -18,8 +19,10 @@ resource "aws_vpc" "main" {
 }
 
 data "aws_vpc" "main" {
-  count = var.vpc_id == null ? 0 : 1
-  id = var.vpc_id
+  count = length(var.public_subnet_ids) + length(var.private_subnet_ids) == 0 ? 0 : 1
+  # test obtaining the vpc_id from one of the provided subnets, public or private
+  #id = local.vpc.id
+  id = var.public_subnet_ids != null ? local.public_subnets[0].vpc_id : local.private_subnets[0].vpc_id 
 }
 
 resource "aws_subnet" "public" {
@@ -29,7 +32,7 @@ resource "aws_subnet" "public" {
   cidr_block        = cidrsubnet(var.vpc_cidr_block, var.vpc_cidr_newbits, count.index)
   vpc_id            = aws_vpc.main[count.index].id
 
-  tags = merge({ Name = "${var.name}-pulbic-subnet-${count.index}", "kubernetes.io/role/elb" = 1 }, var.tags, var.subnet_tags)
+  tags = merge({ Name = "${var.name}-public-subnet-${count.index}", "kubernetes.io/role/elb" = 1 }, var.tags, var.subnet_tags)
 
   lifecycle {
     ignore_changes = [
@@ -70,7 +73,8 @@ data "aws_subnet" "private" {
 }
 
 resource "aws_internet_gateway" "main" {
-  count = var.vpc_id == null ? 1 : 0
+  # maybe should be only public_subnet_ids?
+  count = length(var.public_subnet_ids) + length(var.private_subnet_ids) == 0 ? 1 : 0
   vpc_id = local.vpc.id
 
   tags = merge({ Name = var.name }, var.tags)
@@ -95,7 +99,8 @@ resource "aws_nat_gateway" "main" {
 }
 
 resource "aws_route_table" "public" {
-  count = var.vpc_id == null ? 1 : 0
+  # maybe only public_subnet_ips?
+  count = length(var.public_subnet_ids) + length(var.private_subnet_ids) == 0 ? 1 : 0
   vpc_id = local.vpc.id
 
   route {
@@ -130,7 +135,7 @@ data "aws_route_table" "private" {
 }
 
 resource "aws_route_table_association" "public" {
-  count = var.vpc_id == null ? length(var.aws_availability_zones) : 0
+  count = var.public_subnet_ids == null ? length(var.aws_availability_zones) : 0
 
   subnet_id      = aws_subnet.public[count.index].id
   route_table_id = aws_route_table.public[count.index].id
