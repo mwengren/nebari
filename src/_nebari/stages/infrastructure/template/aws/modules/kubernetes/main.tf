@@ -196,3 +196,20 @@ resource "aws_iam_openid_connect_provider" "oidc_provider" {
     var.tags
   )
 }
+
+/*
+resource "aws_eks_identity_provider_config" "oidc_config" {
+  cluster_name = aws_eks_cluster.main.name
+
+   oidc {
+    client_id                     = "sts.${data.aws_partition.current.dns_suffix}"
+    identity_provider_config_name = "oidc-config"
+    issuer_url                    = aws_eks_cluster.main.identity[0].oidc[0].issuer
+  }
+  
+  tags = merge(
+    { Name = "${var.name}-eks-oidc-config" },
+    var.tags
+  )
+}
+*/
