@@ -180,12 +180,31 @@ data "aws_security_group" "main" {
 }
 
 resource "aws_vpc_endpoint" "s3" {
+  count             = data.aws_vpc_endpoint.s3 == null ? 1 : 0
   vpc_id            = local.vpc.id
   service_name      = "com.amazonaws.${var.region}.s3"
   vpc_endpoint_type = "Gateway"
   route_table_ids   = local.private_route_tables[*].id
   tags              = merge({ Name = "${var.name}-s3-endpoint" }, var.tags)
 }
+
+data "aws_vpc_endpoint" "s3" {
+  vpc_id = local.vpc.id
+  service_name = "com.amazonaws.${var.region}.s3"
+}
+
+/*
+# probably can just remove this block entirely - it adds route_table_associations between to data.aws_vpc_endpoint.s3
+# with local.private_route_tables (if local.private_route_tables were provided by variable, may be duplicative/overwrite existing associations)
+resource "aws_vpc_endpoint_route_table_association" "s3" {
+  count = data.aws_vpc_endpoint.s3 != null ? length(local.private_route_tables) : 0
+  
+  # this won't be created unless data.aws_vpc_endpoint.s3 exists, no need to refer to aws_vpc_endpoint.s3 resource here: 
+  #vpc_endpoint_id = length(aws_vpc_endpoint.s3) > 0 ? one(aws_vpc_endpoint.s3[*]).id : data.aws_vpc_endpoint.s3.id
+  vpc_endpoint_id = data.aws_vpc_endpoint.s3.id
+  route_table_id = local.private_route_tables[count.index].id
+}
+*/
 
 resource "aws_vpc_endpoint" "ecr_api" {
   vpc_id              = local.vpc.id
@@ -235,9 +254,22 @@ resource "aws_vpc_endpoint" "eks" {
   vpc_id              = local.vpc.id
   service_name        = "com.amazonaws.${var.region}.eks"
   vpc_endpoint_type   = "Interface"
-  private_dns_enabled = true
+  private_dns_enabled = false
   security_group_ids  = [local.aws_security_group.id]
   #security_group_ids  = local.aws_security_groups[*].id
   subnet_ids          = local.private_subnets[*].id
   tags                = merge({ Name = "${var.name}-eks-endpoint" }, var.tags)
 }
+
+/* 
+resource "aws_vpc_endpoint" "eks_oidc" {
+  vpc_id              = local.vpc.id
+  service_name        = "com.amazonaws.${var.region}.eks.oidc"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = false
+  security_group_ids  = [local.aws_security_group.id]
+  #security_group_ids  = local.aws_security_groups[*].id
+  subnet_ids          = local.private_subnets[*].id
+  tags                = merge({ Name = "${var.name}-eks-oidc-endpoint" }, var.tags)
+}
+*/

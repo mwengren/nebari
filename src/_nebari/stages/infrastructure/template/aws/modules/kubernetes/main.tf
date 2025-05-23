@@ -208,6 +208,23 @@ resource "aws_iam_openid_connect_provider" "oidc_provider" {
   )
 }
 
+/*
+resource "aws_eks_identity_provider_config" "oidc_config" {
+  cluster_name = aws_eks_cluster.main.name
+
+   oidc {
+    client_id                     = "sts.${data.aws_partition.current.dns_suffix}"
+    identity_provider_config_name = "oidc-config"
+    issuer_url                    = aws_eks_cluster.main.identity[-1].oidc[0].issuer
+  }
+  
+  tags = merge(
+    { Name = "${var.name}-eks-oidc-config" },
+    var.tags
+  )
+}
+*/
+
 # IAM role for EBS CSI driver using IRSA
 resource "aws_iam_role" "ebs_csi_driver" {
   name = "${var.name}-ebs-csi-driver"
