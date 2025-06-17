@@ -193,18 +193,13 @@ data "aws_vpc_endpoint" "s3" {
   service_name = "com.amazonaws.${var.region}.s3"
 }
 
-/*
-# probably can just remove this block entirely - it adds route_table_associations between to data.aws_vpc_endpoint.s3
-# with local.private_route_tables (if local.private_route_tables were provided by variable, may be duplicative/overwrite existing associations)
+
 resource "aws_vpc_endpoint_route_table_association" "s3" {
   count = data.aws_vpc_endpoint.s3 != null ? length(local.private_route_tables) : 0
-  
-  # this won't be created unless data.aws_vpc_endpoint.s3 exists, no need to refer to aws_vpc_endpoint.s3 resource here: 
-  #vpc_endpoint_id = length(aws_vpc_endpoint.s3) > 0 ? one(aws_vpc_endpoint.s3[*]).id : data.aws_vpc_endpoint.s3.id
   vpc_endpoint_id = data.aws_vpc_endpoint.s3.id
   route_table_id = local.private_route_tables[count.index].id
 }
-*/
+
 
 resource "aws_vpc_endpoint" "ecr_api" {
   vpc_id              = local.vpc.id
