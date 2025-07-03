@@ -160,7 +160,7 @@ resource "aws_security_group" "main" {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = [var.vpc_cidr_block]
+    cidr_blocks = var.vpc_cidr_block != null ? [var.vpc_cidr_block] : flatten([local.public_subnets[*].cidr_block],[local.private_subnets[*].cidr_block])
   }
 
   egress {
