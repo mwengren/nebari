@@ -238,7 +238,6 @@ class AWSInputVars(schema.Base):
     name: str
     environment: str
     existing_security_group_id: Optional[str] = None
-    existing_subnet_ids: Optional[List[str]] = None
     region: str
     kubernetes_version: str
     eks_endpoint_access: Optional[
@@ -253,7 +252,6 @@ class AWSInputVars(schema.Base):
     kubeconfig_filename: str = get_kubeconfig_filename()
     tags: Dict[str, str] = {}
     efs_enabled: bool
-    vpc_id: Optional[str] = None
     public_subnet_ids: Optional[List[str]] = None
     private_subnet_ids: Optional[List[str]] = None
 
@@ -570,12 +568,10 @@ class AmazonWebServicesProvider(schema.Base):
     ] = "public_and_private"
     eks_public_access_cidrs: Optional[List[str]] = ["0.0.0.0/0"]
     eks_kms_arn: Optional[str] = None
-    existing_subnet_ids: Optional[List[str]] = None
     existing_security_group_id: Optional[str] = None
     vpc_cidr_block: str = "10.10.0.0/16"
     permissions_boundary: Optional[str] = None
     tags: Optional[Dict[str, str]] = {}
-    vpc_id: Optional[str] = None
     public_subnet_ids: Optional[List[str]] = None
     private_subnet_ids: Optional[List[str]] = None
 
@@ -946,7 +942,6 @@ class KubernetesInfrastructureStage(NebariTerraformStage):
                 eks_endpoint_access=self.config.amazon_web_services.eks_endpoint_access,
                 eks_public_access_cidrs=self.config.amazon_web_services.eks_public_access_cidrs,
                 eks_kms_arn=self.config.amazon_web_services.eks_kms_arn,
-                existing_subnet_ids=self.config.amazon_web_services.existing_subnet_ids,
                 existing_security_group_id=self.config.amazon_web_services.existing_security_group_id,
                 region=self.config.amazon_web_services.region,
                 kubernetes_version=self.config.amazon_web_services.kubernetes_version,
@@ -975,7 +970,6 @@ class KubernetesInfrastructureStage(NebariTerraformStage):
                 permissions_boundary=self.config.amazon_web_services.permissions_boundary,
                 tags=self.config.amazon_web_services.tags,
                 efs_enabled=self.config.storage.type == SharedFsEnum.efs,
-                vpc_id=self.config.amazon_web_services.vpc_id,
                 public_subnet_ids=self.config.amazon_web_services.public_subnet_ids,
                 private_subnet_ids=self.config.amazon_web_services.private_subnet_ids
             ).model_dump()

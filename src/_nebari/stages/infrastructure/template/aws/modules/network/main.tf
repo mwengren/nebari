@@ -73,8 +73,7 @@ data "aws_subnet" "private" {
 }
 
 resource "aws_internet_gateway" "main" {
-  # maybe should be only public_subnet_ids?
-  count = length(var.public_subnet_ids) + length(var.private_subnet_ids) == 0 ? 1 : 0
+  count = length(var.public_subnet_ids) == 0 ? 1 : 0
   vpc_id = local.vpc.id
 
   tags = merge({ Name = var.name }, var.tags)
@@ -99,8 +98,7 @@ resource "aws_nat_gateway" "main" {
 }
 
 resource "aws_route_table" "public" {
-  # maybe only public_subnet_ips?
-  count = length(var.public_subnet_ids) + length(var.private_subnet_ids) == 0 ? 1 : 0
+  count = length(var.public_subnet_ids) == 0 ? 1 : 0
   vpc_id = local.vpc.id
 
   route {
@@ -160,7 +158,8 @@ resource "aws_security_group" "main" {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = var.vpc_cidr_block != null ? [var.vpc_cidr_block] : flatten([local.public_subnets[*].cidr_block],[local.private_subnets[*].cidr_block])
+    #cidr_blocks = var.vpc_cidr_block != null ? [var.vpc_cidr_block] : flatten([local.public_subnets[*].cidr_block],[local.private_subnets[*].cidr_block])
+    cidr_blocks = local.vpc.cidr_block_associations[*].cidr_block
   }
 
   egress {
