@@ -30,7 +30,7 @@ resource "aws_subnet" "public" {
 
   availability_zone = var.aws_availability_zones[count.index]
   cidr_block        = cidrsubnet(var.vpc_cidr_block, var.vpc_cidr_newbits, count.index)
-  vpc_id            = aws_vpc.main[count.index].id
+  vpc_id            = aws_vpc.main.id
 
   tags = merge({ Name = "${var.name}-public-subnet-${count.index}", "kubernetes.io/role/elb" = 1 }, var.tags, var.subnet_tags)
 
@@ -56,7 +56,7 @@ resource "aws_subnet" "private" {
 
   availability_zone = var.aws_availability_zones[count.index]
   cidr_block        = cidrsubnet(var.vpc_cidr_block, var.vpc_cidr_newbits, count.index + length(var.aws_availability_zones))
-  vpc_id            = aws_vpc.main[count.index].id
+  vpc_id            = aws_vpc.main.id
 
   tags = merge({ Name = "${var.name}-private-subnet-${count.index}" }, var.tags, var.subnet_tags)
 
@@ -73,8 +73,7 @@ data "aws_subnet" "private" {
 }
 
 resource "aws_internet_gateway" "main" {
-  # maybe should be only public_subnet_ids?
-  count = length(var.public_subnet_ids) + length(var.private_subnet_ids) == 0 ? 1 : 0
+  count = length(var.public_subnet_ids) == 0 ? 1 : 0
   vpc_id = local.vpc.id
 
   tags = merge({ Name = var.name }, var.tags)
@@ -99,8 +98,7 @@ resource "aws_nat_gateway" "main" {
 }
 
 resource "aws_route_table" "public" {
-  # maybe only public_subnet_ips?
-  count = length(var.public_subnet_ids) + length(var.private_subnet_ids) == 0 ? 1 : 0
+  count = length(var.public_subnet_ids) == 0 ? 1 : 0
   vpc_id = local.vpc.id
 
   route {
