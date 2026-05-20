@@ -1,13 +1,16 @@
-> [!CAUTION]
-> **This project has been archived.**
+> [!NOTE]
+> **Nebari is evolving — this repository is now called nebari-classic.**
 >
-> Nebari has had its final release. No further development or releases are planned.
+> Over the years of building and maintaining Nebari, we accumulated a long list of patterns, tooling, and architectural decisions we wanted to apply but were constrained by the current architecture. Rather than continue layering on that foundation, we decided to pause feature development on what we now call **nebari-classic** and invest in a new architecture organized around the expertise we've built:
 >
-> This project, now called nebari-classic, has been superseded by:
-> - [nebari-infrastructure-core (NIC)](https://github.com/nebari-dev/nebari-infrastructure-core), which takes a composable, modular approach to infrastructure management
-> - [nebari-data-science-pack](https://github.com/nebari-dev/nebari-data-science-pack), which provides the data science tools included in nebari-classic.
+> - [nebari-infrastructure-core (NIC)](https://github.com/nebari-dev/nebari-infrastructure-core) — a composable, modular approach to infrastructure management.
+> - A set of component layer "packs" that allow software to be easily integrated on top of NIC through GitOps: including **Nebi** (A newer and more resilient replacement for conda-store), **Dask**, and the **data science pack** (JhubApps, Jupyter* and more). All that together covers the user-facing functionality nebari-classic provides today. Browse them under [Software Packs](https://nebari.dev/docs/software-packs/) on the docs site, or search the [nebari-dev org for "pack" repositories](https://github.com/orgs/nebari-dev/repositories?q=pack).
 >
-> See the NIC design documents in that repository for the reasoning behind this transition.
+> See the NIC design documents in that repository for the full reasoning behind this transition.
+>
+> **What this means for nebari-classic.** We will continue to ship critical bug fixes, security and vulnerability patches, and dependency updates on this repository. Though at a slower cadence than during active feature development. We expect to keep the maintenance window open until the new architecture is stable enough and well-tested so that operators have had time to migrate, likely through the end of 2026.
+>
+> Nebari as a whole is very much still being built — you are more than welcome to join us at the community meetings and help shape what comes next.
 >
 
 ---
