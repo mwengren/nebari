@@ -22,9 +22,12 @@ def handle_keycloak_export(args):
     if not config_filename.is_file():
         raise ValueError(
             f"passed in configuration filename={config_filename} must exist"
-        )
+        ) 
 
-    keycloak_admin = get_keycloak_admin_from_config(config_filename)
+    from nebari.plugins import nebari_plugin_manager
+    config = nebari_plugin_manager.read_config(config_filename)
+    
+    keycloak_admin = get_keycloak_admin_from_config(config)
 
     realm = {"id": "nebari", "realm": "nebari"}
 

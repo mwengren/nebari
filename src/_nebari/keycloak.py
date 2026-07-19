@@ -158,6 +158,7 @@ def get_keycloak_admin_from_config(config: schema.Main):
     )
 
     should_verify_tls = config.certificate.type != CertificateEnum.selfsigned
+    should_verify_tls = False
 
     return get_keycloak_admin(
         server_url=keycloak_server_url,
