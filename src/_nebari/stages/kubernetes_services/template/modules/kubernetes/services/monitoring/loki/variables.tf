@@ -66,7 +66,7 @@ variable "buckets" {
 variable "minio-storage" {
   description = "Minio storage"
   type        = string
-  default     = "50Gi"
+  default     = "300Gi"
 }
 
 variable "minio-enabled" {
